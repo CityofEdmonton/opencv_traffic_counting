@@ -23,12 +23,17 @@ from pipeline import (
 
 # ============================================================================
 IMAGE_DIR = "./out"
-VIDEO_SOURCE = "input.mp4"
-SHAPE = (720, 1280)  # HxW
+VIDEO_SOURCE = "waterdale_long.mp4"
+VIDEO_OUT_DEST = "output_waterdale_long.mp4"
+# SHAPE = (360, 640)
+# EXIT_PTS = np.array([
+#     [[366, 360], [366, 250], [640, 250], [640, 360]],
+#     [[0, 200], [322, 200], [322, 0], [0, 0]]
+# ])
 EXIT_PTS = np.array([
-    [[732, 720], [732, 590], [1280, 500], [1280, 720]],
-    [[0, 400], [645, 400], [645, 0], [0, 0]]
-])
+    [[0, 240], [320, 240], [320, 180], [0, 180]]
+]) # 320*240
+MIN_CONTOUR_RATIO = 35./720
 # ============================================================================
 
 
@@ -60,6 +65,8 @@ def main():
     # processing pipline for programming conviniance
     pipeline = PipelineRunner(pipeline=[
         ContourDetection(bg_subtractor=bg_subtractor,
+                         min_contour_width=int(MIN_CONTOUR_RATIO*height),
+                         min_contour_height=int(MIN_CONTOUR_RATIO*height),
                          save_image=True, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
