@@ -1,0 +1,13 @@
+numpy
+opencv-python
+pandas
+Pillow
+plotly
+python-dateutil
+requests
+scikit-image
+scikit-learn
+scipy
+sk-video
+sklearn
+PyQt5==5.10.1
