@@ -118,7 +118,7 @@ class ContourDetection(PipelineProcessor):
         matches = []
 
         # finding external contours
-        im2, contours, hierarchy = cv2.findContours(
+        contours, hierarchy = cv2.findContours(
             fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
 
         for (i, contour) in enumerate(contours):
@@ -321,11 +321,12 @@ class CsvWriter(PipelineProcessor):
 
 class Visualizer(PipelineProcessor):
 
-    def __init__(self, save_image=True, image_dir='images'):
+    def __init__(self, video_out, save_image=True, image_dir='images'):
         super(Visualizer, self).__init__()
 
         self.save_image = save_image
         self.image_dir = image_dir
+        self.video_out = video_out
 
     def check_exit(self, point, exit_masks=[]):
         for exit_mask in exit_masks:
@@ -386,7 +387,7 @@ class Visualizer(PipelineProcessor):
         frame = self.draw_pathes(frame, pathes)
         frame = self.draw_boxes(frame, pathes, exit_masks)
 
-        utils.save_frame(frame, self.image_dir +
-                         "/processed_%04d.png" % frame_number)
-
+        # utils.save_frame(frame, self.image_dir +
+        #                  "/processed_%04d.png" % frame_number)
+        self.video_out.write(frame)
         return context
