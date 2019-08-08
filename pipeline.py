@@ -259,7 +259,7 @@ class VehicleCounter(PipelineProcessor):
             d = path[-2:]
 
             if (
-                # need at list two points to count
+                # need at least two points to count
                 len(d) >= 2 and
                 # prev point not in exit zone
                 not self.check_exit(d[0][1]) and
