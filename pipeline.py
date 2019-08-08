@@ -131,7 +131,7 @@ class ContourDetection(PipelineProcessor):
 
             centroid = utils.get_centroid(x, y, w, h)
 
-            matches.append(((x, y, w, h), centroid))
+            matches.append(((x, y, w, h), centroid, context["frame_time_sec"]))
 
         return matches
 
@@ -166,7 +166,7 @@ class VehicleCounter(PipelineProcessor):
         max_dst - max distance between two points.
     '''
 
-    def __init__(self, exit_masks=[], path_size=10, max_dst=30, x_weight=1.0, y_weight=1.0):
+    def __init__(self, fps, avg_speed_interval, exit_masks=[], path_size=10, max_dst=30, x_weight=1.0, y_weight=1.0):
         super(VehicleCounter, self).__init__()
 
         self.exit_masks = exit_masks
@@ -174,9 +174,12 @@ class VehicleCounter(PipelineProcessor):
         self.vehicle_count = 0
         self.path_size = path_size
         self.pathes = []
+        self.pathes_speed_avg_list = []
         self.max_dst = max_dst
         self.x_weight = x_weight
         self.y_weight = y_weight
+        self.fps = fps
+        self.avg_speed_interval = avg_speed_interval
 
     def check_exit(self, point):
         for exit_mask in self.exit_masks:
@@ -192,10 +195,21 @@ class VehicleCounter(PipelineProcessor):
         context['exit_masks'] = self.exit_masks
         context['pathes'] = self.pathes
         context['vehicle_count'] = self.vehicle_count
+        pathes_speed = []
+        context['pathes_speed'] = pathes_speed
+        context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
         if not objects:
+            pathes_speed = utils.calc_pathes_speed(context['pathes'])
+            context['pathes_speed'] = pathes_speed
+            if len(pathes_speed) > 0:
+                self.pathes_speed_avg_list.append(sum(pathes_speed)/len(pathes_speed))
+            if len(self.pathes_speed_avg_list) >= self.fps*self.avg_speed_interval:
+                start_frame_num = len(self.pathes_speed_avg_list)-self.fps*self.avg_speed_interval
+                self.pathes_speed_avg_list = self.pathes_speed_avg_list[start_frame_num:]
+            context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
             return context
 
-        points = np.array(objects)[:, 0:2]
+        points = np.array(objects)[:, 0:3]
         points = points.tolist()
 
         # add new points if pathes is empty
@@ -279,8 +293,15 @@ class VehicleCounter(PipelineProcessor):
                 if add:
                     new_pathes.append(path)
 
-        self.pathes = new_pathes
-
+        self.pathes = new_pathes  
+        pathes_speed = utils.calc_pathes_speed(self.pathes)
+        context["pathes_speed"] = pathes_speed
+        if len(pathes_speed) > 0:
+            self.pathes_speed_avg_list.append(sum(pathes_speed)/len(pathes_speed))
+        if len(self.pathes_speed_avg_list) >= self.fps*self.avg_speed_interval:
+            start_frame_num = len(self.pathes_speed_avg_list)-self.fps*self.avg_speed_interval
+            self.pathes_speed_avg_list = self.pathes_speed_avg_list[start_frame_num:]
+        context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
         context['pathes'] = self.pathes
         context['objects'] = objects
         context['vehicle_count'] = self.vehicle_count
@@ -361,7 +382,22 @@ class Visualizer(PipelineProcessor):
 
         return img
 
-    def draw_ui(self, img, vehicle_count, exit_masks=[]):
+    def draw_pathes_speed(self, img, pathes, pathes_speed, exit_masks=[]):
+        for (i, match) in enumerate(pathes):
+
+            contour, centroid = match[-1][:2]
+            if self.check_exit(centroid, exit_masks):
+                continue
+
+            x, y, w, h = contour
+
+            cv2.putText(img, str(int(pathes_speed[i])), (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,255,255), 1)
+        
+        # cv2.putText(img, ("AVG Speed: {avg_speed}".format(avg_speed=vehicle_count)), (30, 30),
+        #     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
+        return img
+
+    def draw_ui(self, img, vehicle_count, pathes_speed_avg_list, exit_masks=[]):
 
         # this just add green mask with opacity to the image
         for exit_mask in exit_masks:
@@ -369,24 +405,33 @@ class Visualizer(PipelineProcessor):
             _img[:, :] = EXIT_COLOR
             mask = cv2.bitwise_and(_img, _img, mask=exit_mask)
             cv2.addWeighted(mask, 1, img, 1, 0, img)
-
+                
+        if len(pathes_speed_avg_list)> 0: 
+            avg_speed = int(sum(pathes_speed_avg_list)/len(pathes_speed_avg_list))
+        else:
+            avg_speed = '0'
+    
         # drawing top block with counts
         cv2.rectangle(img, (0, 0), (img.shape[1], 50), (0, 0, 0), cv2.FILLED)
-        cv2.putText(img, ("Vehicles passed: {total} ".format(total=vehicle_count)), (30, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
+        cv2.putText(img, ("Vehicles passed: {total}".format(total=vehicle_count)), (30, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(img, ("AVG Speed: {avg_speed}".format(avg_speed=avg_speed)), (30, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return img
 
     def __call__(self, context):
         frame = context['frame'].copy()
         frame_number = context['frame_number']
         pathes = context['pathes']
+        pathes_speed = context['pathes_speed']
         exit_masks = context['exit_masks']
         vehicle_count = context['vehicle_count']
+        pathes_speed_avg_list = context['pathes_speed_avg_list']
 
-        frame = self.draw_ui(frame, vehicle_count, exit_masks)
+        frame = self.draw_ui(frame, vehicle_count, pathes_speed_avg_list, exit_masks)
         frame = self.draw_pathes(frame, pathes)
         frame = self.draw_boxes(frame, pathes, exit_masks)
-
+        frame = self.draw_pathes_speed(frame, pathes, pathes_speed, exit_masks)
         if self.save_image:
             utils.save_frame(frame, self.image_dir +
                              "/processed_%04d.png" % frame_number)

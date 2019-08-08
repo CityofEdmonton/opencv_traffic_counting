@@ -69,3 +69,21 @@ def skeleton(img):
             done = True
 
     return skel
+
+def calc_pathes_speed(pathes):
+    pathes_speed = []
+    # calculate the average speed for each path
+    for i, path in enumerate(pathes):
+        # need at least two points to calculate speed
+        if len(path) >= 2:
+            start_point = path[0]
+            end_point = path[-1]
+            time_duration = end_point[2] - start_point[2]
+            d = distance(start_point[1],end_point[1])
+            path_speed = d / time_duration
+        else:
+            path_speed = 0.0
+
+        pathes_speed.append(path_speed)
+    
+    return pathes_speed

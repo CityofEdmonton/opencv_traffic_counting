@@ -30,6 +30,7 @@ EXIT_PTS = np.array([
     [[0, 240], [320, 240], [320, 180], [0, 180]]
 ]) # 320*240
 MIN_CONTOUR_RATIO = 35./720
+AVG_SPEED_INTERVAL = 2 # interval in seconds
 # ============================================================================
 
 
@@ -82,7 +83,7 @@ def main():
                          save_image=False, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
-        VehicleCounter(exit_masks=[exit_mask], y_weight=2.0),
+        VehicleCounter(fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL ,exit_masks=[exit_mask], y_weight=2.0),
         Visualizer(video_out=out, image_dir=IMAGE_DIR, save_image=False),
         CsvWriter(path='./', name='report.csv')
     ], log_level=logging.DEBUG)
@@ -91,23 +92,19 @@ def main():
     train_bg_subtractor(bg_subtractor, cap, num=500)
     cap.release()
 
-    _frame_number = -1
     frame_number = -1
+    frame_time_sec = -1.0/fps
     cap = cv2.VideoCapture(VIDEO_SOURCE)
     while(cap.isOpened()):
         ret, frame = cap.read()
         if ret == True:
-            # real frame number
-            _frame_number += 1
-
-            # # skip every 2nd frame to speed up processing
-            # if _frame_number % 2 != 0:
-            #     continue
+            # calculate the frame time in second
+            frame_time_sec += 1.0/fps
 
             # frame number that will be passed to pipline
             # this needed to make video from cutted frames
             frame_number += 1
-
+            
             # plt.imshow(frame)
             # plt.show()
             # return
@@ -115,6 +112,7 @@ def main():
             pipeline.set_context({
                 'frame': frame,
                 'frame_number': frame_number,
+                'frame_time_sec': frame_time_sec
             })
             pipeline.run()
 
