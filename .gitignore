@@ -1,5 +1,8 @@
 /venv
 /out
+/.vscode
+*.pyc
+*.pyo
 *.mp4
 *.jpg
 *.png
