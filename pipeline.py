@@ -321,7 +321,7 @@ class CsvWriter(PipelineProcessor):
 
 class Visualizer(PipelineProcessor):
 
-    def __init__(self, video_out, save_image=True, image_dir='images'):
+    def __init__(self, video_out, save_image=False, image_dir='images'):
         super(Visualizer, self).__init__()
 
         self.save_image = save_image
@@ -387,7 +387,8 @@ class Visualizer(PipelineProcessor):
         frame = self.draw_pathes(frame, pathes)
         frame = self.draw_boxes(frame, pathes, exit_masks)
 
-        # utils.save_frame(frame, self.image_dir +
-        #                  "/processed_%04d.png" % frame_number)
+        if self.save_image:
+            utils.save_frame(frame, self.image_dir +
+                             "/processed_%04d.png" % frame_number)
         self.video_out.write(frame)
         return context

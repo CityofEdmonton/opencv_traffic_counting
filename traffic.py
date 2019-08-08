@@ -79,11 +79,11 @@ def main():
         ContourDetection(bg_subtractor=bg_subtractor,
                          min_contour_width=int(MIN_CONTOUR_RATIO*height),
                          min_contour_height=int(MIN_CONTOUR_RATIO*height),
-                         save_image=True, image_dir=IMAGE_DIR),
+                         save_image=False, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
         VehicleCounter(exit_masks=[exit_mask], y_weight=2.0),
-        Visualizer(video_out=out, image_dir=IMAGE_DIR),
+        Visualizer(video_out=out, image_dir=IMAGE_DIR, save_image=False),
         CsvWriter(path='./', name='report.csv')
     ], log_level=logging.DEBUG)
 
