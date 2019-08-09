@@ -26,8 +26,9 @@ VIDEO_OUT_DEST = "output_waterdale_long.mp4"
 #     [[0, 240], [320, 240], [320, 180], [0, 180]]
 # ]) # 320*240
 MIN_CONTOUR_RATIO = 35./720
-AVG_SPEED_INTERVAL = 2 # interval in seconds
+AVG_SPEED_INTERVAL = 2  # interval in seconds
 # ============================================================================
+
 
 def select_exit_zones(video_sourse):
     cap = cv2.VideoCapture(video_sourse)
@@ -54,8 +55,9 @@ def select_exit_zones(video_sourse):
         if result is None:
             break
         else:
-            exit_pts += [result] 
+            exit_pts += [result]
     return exit_pts
+
 
 def train_bg_subtractor(inst, cap, num=500):
     '''
@@ -94,7 +96,7 @@ def main():
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print(width,height)
+    print(width, height)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(VIDEO_OUT_DEST, fourcc, fps, (width, height))
@@ -116,7 +118,8 @@ def main():
                          save_image=False, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
-        VehicleCounter(fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL ,exit_masks=[exit_mask], y_weight=2.0),
+        VehicleCounter(fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL,
+                       exit_masks=[exit_mask], y_weight=2.0),
         Visualizer(video_out=out, image_dir=IMAGE_DIR, save_image=False),
         CsvWriter(path='./', name='report.csv')
     ], log_level=logging.DEBUG)
@@ -137,7 +140,7 @@ def main():
             # frame number that will be passed to pipline
             # this needed to make video from cutted frames
             frame_number += 1
-            
+
             # plt.imshow(frame)
             # plt.show()
             # return

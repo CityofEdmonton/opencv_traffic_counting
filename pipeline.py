@@ -202,9 +202,11 @@ class VehicleCounter(PipelineProcessor):
             pathes_speed = utils.calc_pathes_speed(context['pathes'])
             context['pathes_speed'] = pathes_speed
             if len(pathes_speed) > 0:
-                self.pathes_speed_avg_list.append(sum(pathes_speed)/len(pathes_speed))
+                self.pathes_speed_avg_list.append(
+                    sum(pathes_speed)/len(pathes_speed))
             if len(self.pathes_speed_avg_list) >= self.fps*self.avg_speed_interval:
-                start_frame_num = len(self.pathes_speed_avg_list)-self.fps*self.avg_speed_interval
+                start_frame_num = len(
+                    self.pathes_speed_avg_list)-self.fps*self.avg_speed_interval
                 self.pathes_speed_avg_list = self.pathes_speed_avg_list[start_frame_num:]
             context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
             return context
@@ -293,13 +295,15 @@ class VehicleCounter(PipelineProcessor):
                 if add:
                     new_pathes.append(path)
 
-        self.pathes = new_pathes  
+        self.pathes = new_pathes
         pathes_speed = utils.calc_pathes_speed(self.pathes)
         context["pathes_speed"] = pathes_speed
         if len(pathes_speed) > 0:
-            self.pathes_speed_avg_list.append(sum(pathes_speed)/len(pathes_speed))
+            self.pathes_speed_avg_list.append(
+                sum(pathes_speed)/len(pathes_speed))
         if len(self.pathes_speed_avg_list) >= self.fps*self.avg_speed_interval:
-            start_frame_num = len(self.pathes_speed_avg_list)-self.fps*self.avg_speed_interval
+            start_frame_num = len(self.pathes_speed_avg_list) - \
+                self.fps*self.avg_speed_interval
             self.pathes_speed_avg_list = self.pathes_speed_avg_list[start_frame_num:]
         context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
         context['pathes'] = self.pathes
@@ -332,7 +336,7 @@ class CsvWriter(PipelineProcessor):
         if self.prev:
             _count = count - self.prev
 
-        time = ((self.start_time + int(frame_number / self.fps)) * 100 
+        time = ((self.start_time + int(frame_number / self.fps)) * 100
                 + int(100.0 / self.fps) * (frame_number % self.fps))
         self.writer.writerow({'time': time, 'vehicles': _count})
         self.prev = count
@@ -391,8 +395,9 @@ class Visualizer(PipelineProcessor):
 
             x, y, w, h = contour
 
-            cv2.putText(img, str(int(pathes_speed[i])), (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,255,255), 1)
-        
+            cv2.putText(img, str(
+                int(pathes_speed[i])), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+
         # cv2.putText(img, ("AVG Speed: {avg_speed}".format(avg_speed=vehicle_count)), (30, 30),
         #     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
         return img
@@ -405,12 +410,13 @@ class Visualizer(PipelineProcessor):
             _img[:, :] = EXIT_COLOR
             mask = cv2.bitwise_and(_img, _img, mask=exit_mask)
             cv2.addWeighted(mask, 1, img, 1, 0, img)
-                
-        if len(pathes_speed_avg_list)> 0: 
-            avg_speed = int(sum(pathes_speed_avg_list)/len(pathes_speed_avg_list))
+
+        if len(pathes_speed_avg_list) > 0:
+            avg_speed = int(sum(pathes_speed_avg_list) /
+                            len(pathes_speed_avg_list))
         else:
             avg_speed = '0'
-    
+
         # drawing top block with counts
         cv2.rectangle(img, (0, 0), (img.shape[1], 50), (0, 0, 0), cv2.FILLED)
         cv2.putText(img, ("Vehicles passed: {total}".format(total=vehicle_count)), (30, 20),
@@ -428,7 +434,8 @@ class Visualizer(PipelineProcessor):
         vehicle_count = context['vehicle_count']
         pathes_speed_avg_list = context['pathes_speed_avg_list']
 
-        frame = self.draw_ui(frame, vehicle_count, pathes_speed_avg_list, exit_masks)
+        frame = self.draw_ui(frame, vehicle_count,
+                             pathes_speed_avg_list, exit_masks)
         frame = self.draw_pathes(frame, pathes)
         frame = self.draw_boxes(frame, pathes, exit_masks)
         frame = self.draw_pathes_speed(frame, pathes, pathes_speed, exit_masks)

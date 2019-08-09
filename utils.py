@@ -34,7 +34,7 @@ def init_logging(to_file=False):
 
     return main_logger
 
-#=============================================================================
+# =============================================================================
 
 
 def distance(x, y, type='euclidian', x_weight=1.0, y_weight=1.0):
@@ -70,6 +70,7 @@ def skeleton(img):
 
     return skel
 
+
 def calc_pathes_speed(pathes):
     pathes_speed = []
     # calculate the average speed for each path
@@ -79,11 +80,11 @@ def calc_pathes_speed(pathes):
             start_point = path[0]
             end_point = path[-1]
             time_duration = end_point[2] - start_point[2]
-            d = distance(start_point[1],end_point[1])
+            d = distance(start_point[1], end_point[1])
             path_speed = d / time_duration
         else:
             path_speed = 0.0
 
         pathes_speed.append(path_speed)
-    
+
     return pathes_speed
