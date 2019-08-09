@@ -30,7 +30,7 @@ def init_logging(to_file=False):
         handler_file.setFormatter(formatter)
         main_logger.addHandler(handler_file)
 
-    main_logger.setLevel(logging.DEBUG)
+    # main_logger.setLevel(logging.DEBUG)
 
     return main_logger
 
