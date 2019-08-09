@@ -4,7 +4,7 @@ from pipeline import (
     Visualizer,
     CsvWriter,
     VehicleCounter)
-from select_polygon import Select_polygon
+from click_select import Select_polygon, Select_line
 import os
 import logging
 import logging.handlers
@@ -31,6 +31,7 @@ AVG_SPEED_INTERVAL = 2  # interval in seconds
 
 
 def select_exit_zones(video_sourse):
+    print("Select polygons as the exit zones!")
     cap = cv2.VideoCapture(video_sourse)
     print("Press Enter to go to the next frame, input 'y' to pick this frame")
     while(cap.isOpened()):
@@ -58,6 +59,29 @@ def select_exit_zones(video_sourse):
             exit_pts += [result]
     return exit_pts
 
+def select_pixel_distance(video_sourse):
+    print("Select two points to calculate Pixel Distance between them!")
+    cap = cv2.VideoCapture(video_sourse)
+    print("Press Enter to go to the next frame, input 'y' to pick this frame")
+    while(cap.isOpened()):
+        ret, img = cap.read()
+        if ret == True:
+            plt.imshow(img)
+            plt.show(block=False)
+            res = input()
+            if res == "y":
+                plt.close()
+                break
+        else:
+            break
+    # Release everything if job is finished
+    cap.release()
+    cv2.destroyAllWindows()
+
+    sl = Select_line(img)
+    line_pts = sl.select_line()
+    pixel_distance = utils.distance(line_pts[0], line_pts[1])
+    return pixel_distance
 
 def train_bg_subtractor(inst, cap, num=500):
     '''
@@ -78,6 +102,15 @@ def train_bg_subtractor(inst, cap, num=500):
 
 def main():
     log = logging.getLogger("main")
+
+    # pick pixel distance start&end by double clicking
+    PIXEL_DISTANCE = select_pixel_distance(VIDEO_SOURCE)
+    if not PIXEL_DISTANCE:
+        print("No selection of PIXEL_DISTANCE!")
+        return
+    else:
+        print('PIXEL_DISTANCE: ')
+        print(PIXEL_DISTANCE)
 
     # draw polygons using mouse to pick exit points
     EXIT_PTS = select_exit_zones(VIDEO_SOURCE)

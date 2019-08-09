@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-
 class Select_polygon:
     def __init__(self, img):
         self.img = img
@@ -66,9 +65,39 @@ class Select_polygon:
                 return self.pts
         return None
 
+class Select_line:
+    def __init__(self, img):
+        self.img = img
+        self.pts = []  # for storing points
+    
+    def draw_point(self,event,x,y,flags,param):
+        if event == cv2.EVENT_LBUTTONDBLCLK:
+            cv2.circle(self.img,(x,y),5,(0,0,255),-1)
+            self.pts.append([x,y])
+
+    def select_line(self):
+        cv2.namedWindow('image')
+        cv2.setMouseCallback('image', self.draw_point)
+        print("[INFO] Double Click the left button: select the point")
+        print("[INFO] Press finish ESC to quit")
+        while True:
+            cv2.imshow('image',self.img)
+            key = cv2.waitKey(1) & 0xFF
+            if key == 27:
+                cv2.destroyAllWindows()
+                break
+            if len(self.pts) == 2:
+                cv2.destroyAllWindows()
+                return self.pts
+        return None
 
 if __name__ == "__main__":
     img = cv2.imread("Test_image.jpg")
     sp = Select_polygon(img)
     result = sp.select_polygon()
+    print(result)
+
+    img = cv2.imread("Test_image.jpg")
+    sl = Select_line(img)
+    result = sl.select_line()
     print(result)
