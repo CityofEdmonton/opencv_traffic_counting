@@ -160,7 +160,7 @@ def main():
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
         VehicleCounter(use_physical_speed=USE_PHYSICAL_SPEED, meter_per_pixel=METER_PER_PIXEL, fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL,
-                       exit_masks=[exit_mask], y_weight=2.0),
+                       exit_masks=[exit_mask], y_weight=2.0, path_size=10),
         Visualizer(use_physical_speed=USE_PHYSICAL_SPEED,
                    video_out=out, image_dir=IMAGE_DIR, save_image=False),
         CsvWriter(path='./', name='report.csv')
