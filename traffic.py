@@ -27,6 +27,7 @@ VIDEO_OUT_DEST = "output_waterdale_long.mp4"
 # ]) # 320*240
 MIN_CONTOUR_RATIO = 35./720
 AVG_SPEED_INTERVAL = 2  # interval in seconds
+USE_PHYSICAL_SPEED = True
 # ============================================================================
 
 
@@ -59,6 +60,7 @@ def select_exit_zones(video_sourse):
             exit_pts += [result]
     return exit_pts
 
+
 def select_pixel_distance(video_sourse):
     print("Select two points to calculate Pixel Distance between them!")
     cap = cv2.VideoCapture(video_sourse)
@@ -82,6 +84,7 @@ def select_pixel_distance(video_sourse):
     line_pts = sl.select_line()
     pixel_distance = utils.distance(line_pts[0], line_pts[1])
     return pixel_distance
+
 
 def train_bg_subtractor(inst, cap, num=500):
     '''
@@ -111,6 +114,11 @@ def main():
     else:
         print('PIXEL_DISTANCE: ')
         print(PIXEL_DISTANCE)
+
+    PYHSICAL_DISTANCE = float(input(
+        "Please enter the physical distance in meters of the pixel distance selected:"))
+
+    METER_PER_PIXEL = PYHSICAL_DISTANCE/PIXEL_DISTANCE
 
     # draw polygons using mouse to pick exit points
     EXIT_PTS = select_exit_zones(VIDEO_SOURCE)
@@ -151,9 +159,10 @@ def main():
                          save_image=False, image_dir=IMAGE_DIR),
         # we use y_weight == 2.0 because traffic are moving vertically on video
         # use x_weight == 2.0 for horizontal.
-        VehicleCounter(fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL,
+        VehicleCounter(use_physical_speed=USE_PHYSICAL_SPEED, meter_per_pixel=METER_PER_PIXEL, fps=fps, avg_speed_interval=AVG_SPEED_INTERVAL,
                        exit_masks=[exit_mask], y_weight=2.0),
-        Visualizer(video_out=out, image_dir=IMAGE_DIR, save_image=False),
+        Visualizer(use_physical_speed=USE_PHYSICAL_SPEED,
+                   video_out=out, image_dir=IMAGE_DIR, save_image=False),
         CsvWriter(path='./', name='report.csv')
     ], log_level=logging.DEBUG)
 

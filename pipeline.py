@@ -166,11 +166,10 @@ class VehicleCounter(PipelineProcessor):
         max_dst - max distance between two points.
     '''
 
-    def __init__(self, fps, avg_speed_interval, exit_masks=[], path_size=10, max_dst=30, x_weight=1.0, y_weight=1.0):
+    def __init__(self, use_physical_speed, meter_per_pixel, fps, avg_speed_interval, exit_masks=[], path_size=10, max_dst=30, x_weight=1.0, y_weight=1.0):
         super(VehicleCounter, self).__init__()
 
         self.exit_masks = exit_masks
-
         self.vehicle_count = 0
         self.path_size = path_size
         self.pathes = []
@@ -180,6 +179,8 @@ class VehicleCounter(PipelineProcessor):
         self.y_weight = y_weight
         self.fps = fps
         self.avg_speed_interval = avg_speed_interval
+        self.meter_per_pixel = meter_per_pixel
+        self.use_physical_speed = use_physical_speed
 
     def check_exit(self, point):
         for exit_mask in self.exit_masks:
@@ -199,7 +200,8 @@ class VehicleCounter(PipelineProcessor):
         context['pathes_speed'] = pathes_speed
         context['pathes_speed_avg_list'] = self.pathes_speed_avg_list
         if not objects:
-            pathes_speed = utils.calc_pathes_speed(context['pathes'])
+            pathes_speed = utils.calc_pathes_speed(
+                context['pathes'], self.meter_per_pixel, self.use_physical_speed)
             context['pathes_speed'] = pathes_speed
             if len(pathes_speed) > 0:
                 self.pathes_speed_avg_list.append(
@@ -296,7 +298,8 @@ class VehicleCounter(PipelineProcessor):
                     new_pathes.append(path)
 
         self.pathes = new_pathes
-        pathes_speed = utils.calc_pathes_speed(self.pathes)
+        pathes_speed = utils.calc_pathes_speed(
+            self.pathes, self.meter_per_pixel, self.use_physical_speed)
         context["pathes_speed"] = pathes_speed
         if len(pathes_speed) > 0:
             self.pathes_speed_avg_list.append(
@@ -346,12 +349,13 @@ class CsvWriter(PipelineProcessor):
 
 class Visualizer(PipelineProcessor):
 
-    def __init__(self, video_out, save_image=False, image_dir='images'):
+    def __init__(self, use_physical_speed, video_out, save_image=False, image_dir='images'):
         super(Visualizer, self).__init__()
 
         self.save_image = save_image
         self.image_dir = image_dir
         self.video_out = video_out
+        self.use_physical_speed = use_physical_speed
 
     def check_exit(self, point, exit_masks=[]):
         for exit_mask in exit_masks:
@@ -394,12 +398,13 @@ class Visualizer(PipelineProcessor):
                 continue
 
             x, y, w, h = contour
+            if self.use_physical_speed:
+                text = "%.2f %s" % (pathes_speed[i], 'km/h')
+            else:
+                text = "%.2f %s" % (pathes_speed[i], 'pixel/s')
+            cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.3, (255, 255, 255), 1)
 
-            cv2.putText(img, str(
-                int(pathes_speed[i])), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
-
-        # cv2.putText(img, ("AVG Speed: {avg_speed}".format(avg_speed=vehicle_count)), (30, 30),
-        #     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
         return img
 
     def draw_ui(self, img, vehicle_count, pathes_speed_avg_list, exit_masks=[]):
@@ -412,16 +417,21 @@ class Visualizer(PipelineProcessor):
             cv2.addWeighted(mask, 1, img, 1, 0, img)
 
         if len(pathes_speed_avg_list) > 0:
-            avg_speed = int(sum(pathes_speed_avg_list) /
-                            len(pathes_speed_avg_list))
+            avg_speed = float(sum(pathes_speed_avg_list) /
+                              len(pathes_speed_avg_list))
         else:
-            avg_speed = '0'
+            avg_speed = 0.0
 
         # drawing top block with counts
         cv2.rectangle(img, (0, 0), (img.shape[1], 50), (0, 0, 0), cv2.FILLED)
         cv2.putText(img, ("Vehicles passed: {total}".format(total=vehicle_count)), (30, 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(img, ("AVG Speed: {avg_speed}".format(avg_speed=avg_speed)), (30, 40),
+
+        if self.use_physical_speed:
+            text = "AVG Speed: %.2f %s" % (avg_speed, 'km/h')
+        else:
+            text = "AVG Speed: %.2f %s" % (avg_speed, 'pixel/s')
+        cv2.putText(img, text, (30, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return img
 

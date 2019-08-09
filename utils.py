@@ -71,7 +71,7 @@ def skeleton(img):
     return skel
 
 
-def calc_pathes_speed(pathes):
+def calc_pathes_speed(pathes, meter_per_pixel, use_physical_speed):
     pathes_speed = []
     # calculate the average speed for each path
     for i, path in enumerate(pathes):
@@ -81,6 +81,13 @@ def calc_pathes_speed(pathes):
             end_point = path[-1]
             time_duration = end_point[2] - start_point[2]
             d = distance(start_point[1], end_point[1])
+            if use_physical_speed:
+                # calculate physical speed in km/hour
+                d = d * (meter_per_pixel/1000)  # distance in km
+                time_duration = time_duration/3600  # duration in hour
+            else:
+                # otherwise, use virtual speed in pixel/second
+                pass
             path_speed = d / time_duration
         else:
             path_speed = 0.0
