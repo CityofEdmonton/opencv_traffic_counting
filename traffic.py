@@ -4,6 +4,7 @@ from pipeline import (
     Visualizer,
     CsvWriter,
     VehicleCounter)
+from select_polygon import Select_polygon
 import os
 import logging
 import logging.handlers
@@ -21,18 +22,40 @@ random.seed(123)
 IMAGE_DIR = "./out"
 VIDEO_SOURCE = "waterdale_long.mp4"
 VIDEO_OUT_DEST = "output_waterdale_long.mp4"
-# SHAPE = (360, 640)
 # EXIT_PTS = np.array([
-#     [[366, 360], [366, 250], [640, 250], [640, 360]],
-#     [[0, 200], [322, 200], [322, 0], [0, 0]]
-# ])
-EXIT_PTS = np.array([
-    [[0, 240], [320, 240], [320, 180], [0, 180]]
-]) # 320*240
+#     [[0, 240], [320, 240], [320, 180], [0, 180]]
+# ]) # 320*240
 MIN_CONTOUR_RATIO = 35./720
 AVG_SPEED_INTERVAL = 2 # interval in seconds
 # ============================================================================
 
+def select_exit_zones(video_sourse):
+    cap = cv2.VideoCapture(video_sourse)
+    print("Press Enter to go to the next frame, input 'y' to pick this frame")
+    while(cap.isOpened()):
+        ret, img = cap.read()
+        if ret == True:
+            plt.imshow(img)
+            plt.show(block=False)
+            res = input()
+            if res == "y":
+                plt.close()
+                break
+        else:
+            break
+    # Release everything if job is finished
+    cap.release()
+    cv2.destroyAllWindows()
+
+    exit_pts = []
+    while True:
+        sp = Select_polygon(img)
+        result = sp.select_polygon()
+        if result is None:
+            break
+        else:
+            exit_pts += [result] 
+    return exit_pts
 
 def train_bg_subtractor(inst, cap, num=500):
     '''
@@ -53,6 +76,16 @@ def train_bg_subtractor(inst, cap, num=500):
 
 def main():
     log = logging.getLogger("main")
+
+    # draw polygons using mouse to pick exit points
+    EXIT_PTS = select_exit_zones(VIDEO_SOURCE)
+    if not EXIT_PTS:
+        print("No selection of exit zone!")
+        return
+    else:
+        EXIT_PTS = np.array(EXIT_PTS)
+        print('EXIT_PTS: ')
+        print(EXIT_PTS)
 
     # Set up image source
     cap = cv2.VideoCapture(VIDEO_SOURCE)
